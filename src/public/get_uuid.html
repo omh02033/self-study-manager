@@ -24,42 +24,64 @@
             return params; 
         }
 
-        function req(url, data) {
+        function req(url, data, status) {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', url);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = () => {
                 if(xhr.readyState === 4 && xhr.status === 200) {
                     alert("완료되었습니다");
-                    document.getElementById("title").innerHTML = "회원가입이 완료되었습니다.";
-                    document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
+                    switch(status) {
+                        case 'r':
+                            document.getElementById("title").innerHTML = "회원가입이 완료되었습니다.";
+                            document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
+                            break;
+                        case 'o':
+                            document.getElementById("title").innerHTML = "등록이 완료되었습니다.";
+                            document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
+                            break;
+                    }
                 } else if(xhr.readyState === 4 && xhr.status === 500) {
                     alert("서버에서 오류가 발생하였습니다");
+                } else if(xhr.readyState === 4 && xhr.status === 400) {
+                    const data = JSON.parse(xhr.responseText);
+                    switch(data.code) {
+                        case 'n':
+                            const a = confirm("이미 외출 상태 입니다.\n상태를 업데이트 하게습니까?");
+                            if(a) {
+                                req('/update', JSON.stringify({
+                                    field: decodeURI(q.field),
+                                    reason: decodeURI(q.reason),
+                                    uuid
+                                }), q.status);
+                            }
+                            break;
+                    }
                 }
             }
             xhr.send(data);
         }
 
         const q = getUrlParams();
-        switch(q.field) {
+        switch(q.status) {
             case 'r':
                 req('/register', JSON.stringify({
                     sid: q.sid,
                     name: decodeURI(q.name),
                     uuid
-                }));
+                }), q.status);
                 break;
             case 'o':
                 req('/outing', JSON.stringify({
                     field: decodeURI(q.field),
                     reason: decodeURI(q.reason),
                     uuid
-                }));
+                }), q.status);
                 break;
             case 'c':
                 req('/comeback', JSON.stringify({
                     uuid
-                }));
+                }), q.status);
                 break;
             default:
                 alert('에러가 발생하였습니다.');

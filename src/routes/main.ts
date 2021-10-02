@@ -10,11 +10,59 @@ router
 })
 .post('/register', async (req: Request, res: Response) => {
     const { sid, name, uuid } = req.body;
-    await knex('auth').insert({ uuid, name, code: sid }).catch(err => {
+    await knex('auth').insert({
+        uuid,
+        name,
+        code: sid
+    }).catch(err => {
         console.log(err);
         return res.status(500).json({result: false});
     });
     return res.status(200).json({result: true});
 })
+.post('/outing', async (req: Request, res: Response) => {
+    const { field, reason, uuid } = req.body;
+
+    const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
+
+    const [status]: Array<DBStatus> = await knex('status').where({ uid: user.id });
+    if(!status) {
+        await knex('status').insert({
+            uid: user.id,
+            reason,
+            fields: field
+        }).catch(err => {
+            console.log(err);
+            return res.status(500).json({ result: false });
+        });
+        return res.status(200).json({ result: true });
+    } else {
+        return res.status(400).json({ result: false, code: 'n' });
+    }
+})
+.post('/update', async (req: Request, res:Response) => {
+    const { field, reason, uuid } = req.body;
+
+    const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
+
+    await knex('status').update({
+        reason,
+        fields: field
+    }).where({ uid: user.id });
+
+    return res.status(200).json({ result: true });
+})
 
 export default router;
+
+interface DBUsers {
+    id: number
+    uuid: string
+    name: string
+    code: string
+}
+interface DBStatus {
+    uid: number
+    reason: string
+    field: string
+}
