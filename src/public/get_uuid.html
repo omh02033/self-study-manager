@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h3 id="title"></h3>
+    <span id="exp"></span>
+    <script src="/uuid.js"></script>
+    <script>
+        const uuid = new DeviceUUID().get();
+
+        function getUrlParams() {     
+            var params = {};  
+            
+            window.location.search.replace(/[?&]+([^=&]+)=([^&]*)/gi, 
+                function(str, key, value) { 
+                    params[key] = value; 
+                }
+            );     
+            
+            return params; 
+        }
+
+        function req(url, data) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = () => {
+                if(xhr.readyState === 4 && xhr.status === 200) {
+                    alert("완료되었습니다");
+                    document.getElementById("title").innerHTML = "회원가입이 완료되었습니다.";
+                    document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
+                } else if(xhr.readyState === 4 && xhr.status === 500) {
+                    alert("서버에서 오류가 발생하였습니다");
+                }
+            }
+            xhr.send(data);
+        }
+
+        const q = getUrlParams();
+        switch(q.field) {
+            case 'r':
+                req('/register', JSON.stringify({
+                    sid: q.sid,
+                    name: decodeURI(q.name),
+                    uuid
+                }));
+                break;
+            case 'o':
+                req('/outing', JSON.stringify({
+                    field: decodeURI(q.field),
+                    reason: decodeURI(q.reason),
+                    uuid
+                }));
+                break;
+            case 'c':
+                req('/comeback', JSON.stringify({
+                    uuid
+                }));
+                break;
+            default:
+                alert('에러가 발생하였습니다.');
+                break;
+        }
+    </script>
+</body>
+</html>
