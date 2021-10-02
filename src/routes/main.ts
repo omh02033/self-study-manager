@@ -40,7 +40,7 @@ router
         return res.status(400).json({ result: false, code: 'n' });
     }
 })
-.post('/update', async (req: Request, res:Response) => {
+.post('/update', async (req: Request, res: Response) => {
     const { field, reason, uuid } = req.body;
 
     const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
@@ -51,6 +51,19 @@ router
     }).where({ uid: user.id });
 
     return res.status(200).json({ result: true });
+})
+
+.post('/comeback', async (req: Request, res: Response) => {
+    const { uuid } = req.body;
+
+    const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
+    const [status]: Array<DBStatus> = await knex('status').where({ uid: user.id });
+    if(!status) {
+        return res.status(400).json({ result: false, code: 'a' });
+    } else {
+        await knex('status').where({ uid: user.id }).del();
+        return res.status(200).json({ result: true });
+    }
 })
 
 export default router;

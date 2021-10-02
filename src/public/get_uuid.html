@@ -34,13 +34,15 @@
                     switch(status) {
                         case 'r':
                             document.getElementById("title").innerHTML = "회원가입이 완료되었습니다.";
-                            document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
                             break;
                         case 'o':
                             document.getElementById("title").innerHTML = "등록이 완료되었습니다.";
-                            document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
+                            break;
+                        case 'c':
+                            document.getElementById("title").innerHTML = "복귀처리가 완료되었습니다.";
                             break;
                     }
+                    document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
                 } else if(xhr.readyState === 4 && xhr.status === 500) {
                     alert("서버에서 오류가 발생하였습니다");
                 } else if(xhr.readyState === 4 && xhr.status === 400) {
@@ -55,6 +57,9 @@
                                     uuid
                                 }), q.status);
                             }
+                            break;
+                        case 'a':
+                            alert('외출 상태가 아닙니다.\n복귀처리에 실패하였습니다.');
                             break;
                     }
                 }
