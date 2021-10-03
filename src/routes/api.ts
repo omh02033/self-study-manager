@@ -15,6 +15,15 @@ router
     }
     return res.status(200).json({ students: sixClass });
 })
+.post('/outing', async (req: Request, res: Response) => {
+    const { classNum } = req.body;
+    const users = await knex('status').join('auth', 'auth.id', 'status.uid')
+    .select('status.reason', 'status.fields', 'status.classNum', 'auth.name', 'auth.code')
+    .where({ classNum });
+    if(!users) return res.status(200).json({ users: [] });
+    else return res.status(200).json({ users });
+    // SELECT s.reason, s.fields, s.classNum, a.name, a.code FROM status AS s JOIN `auth` AS a ON s.uid = a.id WHERE classNum=?;
+})
 
 export default router;
 
