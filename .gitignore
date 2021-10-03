@@ -1,2 +1,7 @@
 /node_modules
-src/config/.env
+
+*.env
+*.dev
+
+*/env
+*.daccache
