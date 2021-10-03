@@ -1,7 +1,2 @@
 /node_modules
-*.env
-*.dev
-/*.env
-/*.dev
-
-/src/config/.env
+src/config/.env
