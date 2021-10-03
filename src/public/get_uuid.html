@@ -9,7 +9,13 @@
     <h3 id="title"></h3>
     <span id="exp"></span>
     <script src="/uuid.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        const socket = io();
+        socket.on('connect', () => {
+            console.log("socket connected");
+        });
+
         const uuid = new DeviceUUID().get();
 
         function getUrlParams() {     
@@ -31,17 +37,20 @@
             xhr.onreadystatechange = () => {
                 if(xhr.readyState === 4 && xhr.status === 200) {
                     alert("완료되었습니다");
+                    const data = JSON.parse(xhr.responseText);
                     switch(status) {
                         case 'r':
                             document.getElementById("title").innerHTML = "회원가입이 완료되었습니다.";
                             break;
                         case 'o':
                             document.getElementById("title").innerHTML = "등록이 완료되었습니다.";
+                            socket.emit('outing', data.socketData);
                             break;
                         case 'c':
                             document.getElementById("title").innerHTML = "복귀처리가 완료되었습니다.";
+                            socket.emit('comeback', data.socketData);
                             break;
-                    }
+                        }
                     document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
                 } else if(xhr.readyState === 4 && xhr.status === 500) {
                     alert("서버에서 오류가 발생하였습니다");
@@ -54,12 +63,17 @@
                                 req('/update', JSON.stringify({
                                     field: decodeURI(q.field),
                                     reason: decodeURI(q.reason),
-                                    uuid
+                                    uuid,
+                                    classNum: q.class
                                 }), q.status);
                             }
                             break;
                         case 'a':
                             alert('외출 상태가 아닙니다.\n복귀처리에 실패하였습니다.');
+                            break;
+                        case 'e':
+                            alert('이미 회원가입 된 디바이스 입니다.');
+                            document.getElementById("title").innerHTML = "계정 삭제는 관리자에게 문의하세요";
                             break;
                     }
                 }
@@ -68,24 +82,27 @@
         }
 
         const q = getUrlParams();
+        socket.emit('class', q.class);
         switch(q.status) {
             case 'r':
                 req('/register', JSON.stringify({
                     sid: q.sid,
                     name: decodeURI(q.name),
-                    uuid
+                    uuid,
                 }), q.status);
                 break;
             case 'o':
                 req('/outing', JSON.stringify({
                     field: decodeURI(q.field),
                     reason: decodeURI(q.reason),
-                    uuid
+                    uuid,
+                    classNum: q.class
                 }), q.status);
                 break;
             case 'c':
                 req('/comeback', JSON.stringify({
-                    uuid
+                    uuid,
+                    classNum: q.class
                 }), q.status);
                 break;
             default:

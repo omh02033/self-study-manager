@@ -10,18 +10,23 @@ router
 })
 .post('/register', async (req: Request, res: Response) => {
     const { sid, name, uuid } = req.body;
-    await knex('auth').insert({
-        uuid,
-        name,
-        code: sid
-    }).catch(err => {
-        console.log(err);
-        return res.status(500).json({result: false});
-    });
-    return res.status(200).json({result: true});
+    const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
+    if(!user) {
+        await knex('auth').insert({
+            uuid,
+            name,
+            code: sid
+        }).catch(err => {
+            console.log(err);
+            return res.status(500).json({result: false});
+        });
+        return res.status(200).json({result: true});
+    } else {
+        return res.status(400).json({ result: false, code: 'e' })
+    }
 })
 .post('/outing', async (req: Request, res: Response) => {
-    const { field, reason, uuid } = req.body;
+    const { field, reason, uuid, classNum } = req.body;
 
     const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
 
@@ -30,18 +35,26 @@ router
         await knex('status').insert({
             uid: user.id,
             reason,
-            fields: field
+            fields: field,
+            classNum
         }).catch(err => {
             console.log(err);
             return res.status(500).json({ result: false });
         });
-        return res.status(200).json({ result: true });
+        return res.status(200).json({ result: true, socketData: {
+            classNum,
+            serial: user.code,
+            name: user.name,
+            field,
+            reason,
+            status: 'o'
+        } });
     } else {
         return res.status(400).json({ result: false, code: 'n' });
     }
 })
 .post('/update', async (req: Request, res: Response) => {
-    const { field, reason, uuid } = req.body;
+    const { field, reason, uuid, classNum } = req.body;
 
     const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
 
@@ -50,11 +63,18 @@ router
         fields: field
     }).where({ uid: user.id });
 
-    return res.status(200).json({ result: true });
+    return res.status(200).json({ result: true, socketData: {
+        classNum,
+        serial: user.code,
+        name: user.name,
+        field,
+        reason,
+        status: 'u'
+    } });
 })
 
 .post('/comeback', async (req: Request, res: Response) => {
-    const { uuid } = req.body;
+    const { uuid, classNum } = req.body;
 
     const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
     const [status]: Array<DBStatus> = await knex('status').where({ uid: user.id });
@@ -62,7 +82,10 @@ router
         return res.status(400).json({ result: false, code: 'a' });
     } else {
         await knex('status').where({ uid: user.id }).del();
-        return res.status(200).json({ result: true });
+        return res.status(200).json({ result: true, socketData: {
+            classNum,
+            serial: user.code
+        } });
     }
 })
 
