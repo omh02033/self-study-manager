@@ -21,7 +21,6 @@ function connectHanelder(socket:Socket) {
     });
 
     socket.on('outing', data => {
-        console.log("sdsd");
         socket.to(data.classNum).emit("userOut", data);
     });
     socket.on('comeback', data => {
