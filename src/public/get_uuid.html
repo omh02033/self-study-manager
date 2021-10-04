@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <h3 id="title"></h3>
-    <span id="exp"></span>
     <script src="/uuid.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -36,44 +34,39 @@
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.onreadystatechange = () => {
                 if(xhr.readyState === 4 && xhr.status === 200) {
-                    alert("완료되었습니다");
                     const data = JSON.parse(xhr.responseText);
                     switch(status) {
-                        case 'r':
-                            document.getElementById("title").innerHTML = "회원가입이 완료되었습니다.";
-                            break;
                         case 'o':
-                            document.getElementById("title").innerHTML = "등록이 완료되었습니다.";
                             socket.emit('outing', data.socketData);
                             break;
                         case 'c':
-                            document.getElementById("title").innerHTML = "복귀처리가 완료되었습니다.";
                             socket.emit('comeback', data.socketData);
                             break;
-                        }
-                    document.getElementById("exp").innerHTML = "이제 돌아가셔도 됩니다.";
+                    }
                 } else if(xhr.readyState === 4 && xhr.status === 500) {
-                    alert("서버에서 오류가 발생하였습니다");
+                    // err 
+                    window.parent.postMessage({ err:true, code:status }, '*');
                 } else if(xhr.readyState === 4 && xhr.status === 400) {
                     const data = JSON.parse(xhr.responseText);
                     switch(data.code) {
                         case 'n':
-                            const a = confirm("이미 외출 상태 입니다.\n상태를 업데이트 하게습니까?");
-                            if(a) {
-                                req('/update', JSON.stringify({
-                                    field: decodeURI(q.field),
-                                    reason: decodeURI(q.reason),
-                                    uuid,
-                                    classNum: q.class
-                                }), q.status);
-                            }
+                            req('/update', JSON.stringify({
+                                field: decodeURI(q.field),
+                                reason: decodeURI(q.reason),
+                                uuid,
+                                classNum: q.class
+                            }), q.status);
                             break;
                         case 'a':
-                            alert('외출 상태가 아닙니다.\n복귀처리에 실패하였습니다.');
+                            window.parent.postMessage({ err:true, code:'c' }, '*');
+                            // alert('외출 상태가 아닙니다.\n복귀처리에 실패하였습니다.');
                             break;
                         case 'e':
-                            alert('이미 회원가입 된 디바이스 입니다.');
-                            document.getElementById("title").innerHTML = "계정 삭제는 관리자에게 문의하세요";
+                            window.parent.postMessage({ err:true, code:'r' }, '*');
+                            // alert('이미 회원가입 된 디바이스 입니다.');
+                            break;
+                        case 'd':
+                            window.parent.postMessage({ err:true, code:q.field }, '*');
                             break;
                     }
                 }
@@ -104,9 +97,6 @@
                     uuid,
                     classNum: q.class
                 }), q.status);
-                break;
-            default:
-                alert('에러가 발생하였습니다.');
                 break;
         }
     </script>

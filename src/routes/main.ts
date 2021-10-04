@@ -29,6 +29,7 @@ router
     const { field, reason, uuid, classNum } = req.body;
 
     const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
+    if(!user) { return res.status(400).json({ result: false, code: 'd' }); }
 
     const [status]: Array<DBStatus> = await knex('status').where({ uid: user.id });
     if(!status) {
@@ -45,7 +46,7 @@ router
             classNum,
             serial: user.code,
             name: user.name,
-            field,
+            fields: field,
             reason,
             status: 'o'
         } });
@@ -67,7 +68,7 @@ router
         classNum,
         serial: user.code,
         name: user.name,
-        field,
+        fields: field,
         reason,
         status: 'u'
     } });

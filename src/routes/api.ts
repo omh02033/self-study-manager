@@ -17,11 +17,18 @@ router
 })
 .post('/outing', async (req: Request, res: Response) => {
     const { classNum } = req.body;
-    const users = await knex('status').join('auth', 'auth.id', 'status.uid')
+    const users: Array<DBUsers> = await knex('status').join('auth', 'auth.id', 'status.uid')
     .select('status.reason', 'status.fields', 'status.classNum', 'auth.name', 'auth.code')
     .where({ classNum });
+    
+    for(let i=0; i<users.length; i++) {
+        users[i].serial = users[i].code;
+        delete users[i].code;
+        users[i].classNum = classNum;
+    }
+
     if(!users) return res.status(200).json({ users: [] });
-    else return res.status(200).json({ users });
+    else return res.status(200).json({users});
     // SELECT s.reason, s.fields, s.classNum, a.name, a.code FROM status AS s JOIN `auth` AS a ON s.uid = a.id WHERE classNum=?;
 })
 
@@ -58,3 +65,17 @@ interface DimiStudent {
     dormitory: string;
     library_id: string;
   }
+
+interface DBUsers {
+    id: number
+    uuid: string
+    name: string
+    code?: string
+    serial?: string
+    classNum?: string
+}
+interface DBStatus {
+    uid: number
+    reason: string
+    field: string
+}
