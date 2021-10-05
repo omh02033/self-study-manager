@@ -7,7 +7,7 @@ const router = Router();
 router
 .post('/getStudents', async (req: Request, res: Response) => {
     const students = await getStudents();
-    let sixClass = [];
+    const sixClass = [];
     for(let i of students) {
         if(i.grade === 1 && i.class === 6) {
             sixClass.push(i);
@@ -27,8 +27,15 @@ router
         users[i].classNum = classNum;
     }
 
+    const students = await getStudents();
+    let totalNum = 0;
+    for(let i of students) {
+        if(i.serial)
+            if(i.serial.substr(0,2) == classNum) totalNum += 1;
+    }
+
     if(!users) return res.status(200).json({ users: [] });
-    else return res.status(200).json({users});
+    else return res.status(200).json({users, totalNum});
     // SELECT s.reason, s.fields, s.classNum, a.name, a.code FROM status AS s JOIN `auth` AS a ON s.uid = a.id WHERE classNum=?;
 })
 
