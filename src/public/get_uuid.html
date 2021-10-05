@@ -62,7 +62,7 @@
                             // alert('외출 상태가 아닙니다.\n복귀처리에 실패하였습니다.');
                             break;
                         case 'e':
-                            window.parent.postMessage({ err:true, code:'r' }, '*');
+                            window.parent.postMessage({ err:true, code:'r', serial: q.sid }, '*');
                             // alert('이미 회원가입 된 디바이스 입니다.');
                             break;
                         case 'd':
@@ -80,7 +80,7 @@
             case 'r':
                 req('/register', JSON.stringify({
                     sid: q.sid,
-                    name: decodeURI(q.name),
+                    number: decodeURI(q.number),
                     uuid,
                 }), q.status);
                 break;

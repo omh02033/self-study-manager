@@ -18,7 +18,7 @@ router
 .post('/outing', async (req: Request, res: Response) => {
     const { classNum } = req.body;
     const users: Array<DBUsers> = await knex('status').join('auth', 'auth.id', 'status.uid')
-    .select('status.reason', 'status.fields', 'status.classNum', 'auth.name', 'auth.code')
+    .select('status.reason', 'status.fields', 'status.classNum', 'auth.number', 'auth.code')
     .where({ classNum });
     
     for(let i=0; i<users.length; i++) {
@@ -74,15 +74,15 @@ interface DimiStudent {
   }
 
 interface DBUsers {
-    id: number
-    uuid: string
-    name: string
-    code?: string
-    serial?: string
-    classNum?: string
+    id: number;
+    uuid: string;
+    number: string;
+    code?: string;
+    serial?: string;
+    classNum?: string;
 }
 interface DBStatus {
-    uid: number
-    reason: string
-    field: string
+    uid: number;
+    reason: string;
+    field: string;
 }

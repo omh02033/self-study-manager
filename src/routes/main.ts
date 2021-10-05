@@ -9,12 +9,12 @@ router
     return res.sendFile('get_uuid.html', { root: path.join(__dirname, '../public') });
 })
 .post('/register', async (req: Request, res: Response) => {
-    const { sid, name, uuid } = req.body;
+    const { sid, number, uuid } = req.body;
     const [user]: Array<DBUsers> = await knex('auth').where({ uuid });
     if(!user) {
         await knex('auth').insert({
             uuid,
-            name,
+            number,
             code: sid
         }).catch(err => {
             console.log(err);
@@ -45,7 +45,7 @@ router
         return res.status(200).json({ result: true, socketData: {
             classNum,
             serial: user.code,
-            name: user.name,
+            number: user.number,
             fields: field,
             reason,
             status: 'o'
@@ -67,7 +67,7 @@ router
     return res.status(200).json({ result: true, socketData: {
         classNum,
         serial: user.code,
-        name: user.name,
+        number: user.number,
         fields: field,
         reason,
         status: 'u'
@@ -93,13 +93,13 @@ router
 export default router;
 
 interface DBUsers {
-    id: number
-    uuid: string
-    name: string
-    code: string
+    id: number;
+    uuid: string;
+    number: string;
+    code: string;
 }
 interface DBStatus {
-    uid: number
-    reason: string
-    field: string
+    uid: number;
+    reason: string;
+    field: string;
 }
