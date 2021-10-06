@@ -12,3 +12,10 @@ export interface DBStatus {
     fields: string;
     classNum: string;
 }
+export interface DBSub {
+    reason: string;
+    fields: string;
+    classNum: string;
+    number: string;
+    serial: string;
+}

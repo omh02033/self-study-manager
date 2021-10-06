@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import knex from '../config/db';
 import * as dimiApi from '../api/dimi';
-import { DBUsers, DBStatus } from '../interfaces';
+import { DBUsers, DBStatus, DBSub } from '../interfaces';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
@@ -129,19 +129,24 @@ router
 
 .post('/prevOuting', async (req: Request, res: Response) => {
     const { classNum } = req.body;
-    const users: Array<DBUsers> = await knex('status').join('auth', 'auth.id', 'status.uid')
+    const users: Array<DBSub> = await knex('status').join('auth', 'auth.id', 'status.uid')
     .select('status.reason', 'status.fields', 'status.classNum', 'auth.number', 'auth.serial')
     .where({ 'status.classNum': classNum });
 
     const students = await dimiApi.getAllStudents();
     let totalNum = 0;
+    let etcNum = 0;
     for(let i of students) {
         if(i.serial)
             if(`${i.grade}${i.class}` == classNum) totalNum += 1;
     }
+
+    for(let i of users) {
+        if(i.fields === 'etc') etcNum += 1;
+    }
     
-    if(!users) return res.status(200).json({ users: [] });
-    else return res.status(200).json({ users, totalNum });
+    if(!users) return res.status(200).json({ users: [], etcNum });
+    else return res.status(200).json({ users, totalNum, etcNum });
 })
 
 export default router;
