@@ -11,7 +11,7 @@ router
     const token = req.cookies['token'];
     if(token) {
         const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
-        if(decoded) return res.status(400).json({ isLogin: false, delCookie: true });
+        if(!decoded) return res.status(400).json({ isLogin: false, delCookie: true });
         const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
         if(!user) return res.status(400).json({ isLogin: false, delCookie: true });
         return res.status(200).json({ isLogin: true });
@@ -38,9 +38,11 @@ router
                             classNum: `${student.grade}${student.class}`
                         })
                         .catch(err => { return res.status(500).json({ msg: '회원가입 하는 과정에서 에러가 발생하였습니다.', error: err }); });
-                        return res.status(200).json({ token: await jwt.sign({uid: student.username}, process.env.JWT_KEY as string) });
+                        const lToken = await jwt.sign({uid: student.username}, process.env.JWT_KEY as string);
+                        return res.status(200).json({ token: lToken });
                     } else {
-                        return res.status(200).json({ token: await jwt.sign({uid: user.uid}, process.env.JWT_KEY as string) });
+                        const lToken = await jwt.sign({uid: student.username}, process.env.JWT_KEY as string);
+                        return res.status(200).json({ token: lToken });
                     }
                 }
                 break;
