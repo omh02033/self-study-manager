@@ -10,11 +10,13 @@ router
 .post('/isLogin', async (req: Request, res: Response) => {
     const token = req.cookies['token'];
     if(token) {
-        const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
-        if(!decoded) return res.status(400).json({ isLogin: false, delCookie: true });
-        const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
-        if(!user) return res.status(400).json({ isLogin: false, delCookie: true });
-        return res.status(200).json({ isLogin: true });
+        jwt.verify(token, process.env.JWT_KEY as string, async (err: any, decoded: any) => {
+            if(err) return res.status(400).json({ isLogin: false, delCookie: true });
+            if(!decoded) return res.status(400).json({ isLogin: false, delCookie: true });
+            const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
+            if(!user) return res.status(400).json({ isLogin: false, delCookie: true });
+            return res.status(200).json({ isLogin: true });
+        });
     } else return res.status(400).json({ isLogin: false, delCookie: false });
 })
 .post('/login', async (req: Request, res: Response) => {
