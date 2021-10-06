@@ -24,4 +24,6 @@ export interface DBEtcManager {
     reason: string;
     manager: string;
     classNum: string;
+    fields?: string;
+    serial?: string;
 }

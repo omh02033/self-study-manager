@@ -15,7 +15,7 @@ router
             if(!decoded) return res.status(400).json({ isLogin: false, delCookie: true });
             const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
             if(!user) return res.status(400).json({ isLogin: false, delCookie: true });
-            return res.status(200).json({ isLogin: true });
+            return res.status(200).json({ isLogin: true, delCookie: false });
         });
     } else return res.status(400).json({ isLogin: false, delCookie: false });
 })
@@ -56,7 +56,7 @@ router
 
 .post('/outing', async (req: Request, res: Response) => {
     const token = req.cookies['token'];
-    if(!token) return res.status(400).json({ msg: '로그인 만료' });
+    if(!token) return res.status(400).json({ result: false });
 
     const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
     if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
@@ -94,7 +94,7 @@ router
 
 .post('/comeback', async (req: Request, res: Response) => {
     const token = req.cookies['token'];
-    if(!token) return res.status(400).json({ msg: '로그인 만료' });
+    if(!token) return res.status(400).json({ result: false });
 
     const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
     if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
@@ -122,7 +122,7 @@ router
 
 .post('/getClassNum', async (req: Request, res: Response) => {
     const token = req.cookies['token'];
-    if(!token) return res.status(400).json({ msg: '로그인 만료' });
+    if(!token) return res.status(400).json({ result: false });
 
     const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
     if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
@@ -152,17 +152,21 @@ router
     for(let i of users) {
         if(i.fields === 'etc') etcNum += 1;
     }
+    const etcMembers = [];
     for(let i of etcManage) {
         etcNum += 1;
+        i.fields = 'etc';
+        i.serial = i.number.length === 0 ? `${i.classNum}0${i.number}` : `${i.classNum}${i.number}`;
+        etcMembers.push(i);
     }
     
-    if(!users) return res.status(200).json({ users: [], etcNum, etcManage });
-    else return res.status(200).json({ users, totalNum, etcNum, etcManage });
+    if(!users) return res.status(200).json({ users: [], etcNum, etcManage: etcMembers });
+    else return res.status(200).json({ users, totalNum, etcNum, etcManage: etcMembers });
 })
 
 .post('/etcManage', async (req: Request, res: Response) => {
     const token = req.cookies['token'];
-    if(!token) return res.status(400).json({ msg: '로그인 만료' });
+    if(!token) return res.status(400).json({ result: false });
     const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
     if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
 
@@ -219,6 +223,35 @@ router
             reason
         } });
     }
+})
+.post('/etcComeback', async (req: Request, res: Response) => {
+    const token = req.cookies['token'];
+    if(!token) return res.status(400).json({ result: false });
+
+    const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
+    if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
+
+    const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
+    if(!user) return res.status(400).json({ msg: '회원가입 되지 않은 유저' });
+
+    const { number } = req.body;
+
+    const status: Array<DBStatus[]> = await knex.raw("SELECT * FROM status WHERE uid=(SELECT id FROM auth WHERE `number`=? AND classNum=?)", [number, user.classNum]);
+    const serial = number.length == 1 ? `${user.classNum}0${number}` : `${user.classNum}${number}`
+    if(!status || status[0].length === 0) {
+        const [etcManager]: Array<DBEtcManager> = await knex('etcmanager').where({ number, classNum: user.classNum });
+        if(!etcManager) return res.status(400).json({ msg: '외출상태가 아닙니다.' });
+        await knex('etcmanager').where({ number, classNum: user.classNum }).del();
+        return res.status(200).json({ socketData: {
+            classNum: user.classNum,
+            serial
+        } });
+    }
+    await knex.raw("DELETE FROM status WHERE uid=(SELECT id FROM auth WHERE `number`=? AND classNum=?)", [number, user.classNum]);
+    return res.status(200).json({ socketData: {
+        classNum: user.classNum,
+        serial
+    } });
 })
 
 export default router;
