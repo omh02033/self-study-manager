@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import knex from '../config/db';
 import * as dimiApi from '../api/dimi';
-import { DBUsers, DBStatus, DBSub } from '../interfaces';
+import { DBUsers, DBStatus, DBSub, DBEtcManager } from '../interfaces';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
@@ -104,7 +104,13 @@ router
 
     const [status]: Array<DBStatus> = await knex('status').where({ uid: user.id });
     if(!status) {
-        return res.status(400).json({ msg: '이미 복귀 처리 되었습니다.' });
+        const [etcManage]: Array<DBEtcManager> = await knex('etcmanager').where({ classNum: user.classNum, number: user.number });
+        if(!etcManage) return res.status(400).json({ msg: '이미 복귀 처리 되었습니다.' });
+        await knex('etcmanager').where({ classNum: user.classNum, number: user.number }).del();
+        return res.status(200).json({ socketData: {
+            classNum: user.classNum,
+            serial: user.serial
+        } });
     } else {
         await knex('status').where({ uid: user.id }).del();
         return res.status(200).json({ socketData: {
@@ -132,8 +138,10 @@ router
     const users: Array<DBSub> = await knex('status').join('auth', 'auth.id', 'status.uid')
     .select('status.reason', 'status.fields', 'status.classNum', 'auth.number', 'auth.serial')
     .where({ 'status.classNum': classNum });
+    const etcManage: Array<DBEtcManager> = await knex('etcmanager').where({ classNum });
 
     const students = await dimiApi.getAllStudents();
+
     let totalNum = 0;
     let etcNum = 0;
     for(let i of students) {
@@ -144,9 +152,73 @@ router
     for(let i of users) {
         if(i.fields === 'etc') etcNum += 1;
     }
+    for(let i of etcManage) {
+        etcNum += 1;
+    }
     
-    if(!users) return res.status(200).json({ users: [], etcNum });
-    else return res.status(200).json({ users, totalNum, etcNum });
+    if(!users) return res.status(200).json({ users: [], etcNum, etcManage });
+    else return res.status(200).json({ users, totalNum, etcNum, etcManage });
+})
+
+.post('/etcManage', async (req: Request, res: Response) => {
+    const token = req.cookies['token'];
+    if(!token) return res.status(400).json({ msg: '로그인 만료' });
+    const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
+    if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
+
+    const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
+    if(!user) return res.status(400).json({ msg: '회원가입 되지 않은 유저' });
+
+    const { number, reason } = req.body;
+
+    const [etcUser]: Array<DBUsers> = await knex('auth').where({ classNum: user.classNum, number });
+    if(!etcUser) {
+        const [etcMember]: Array<DBEtcManager> = await knex('etcmanager').where({ number, classNum: user.classNum });
+        if(!etcMember) {
+            await knex('etcmanager').insert({
+                number,
+                reason,
+                manager: user.name,
+                classNum: user.classNum
+            })
+            .catch(err => {
+                return res.status(500).json({ msg: '서버 에러' });
+            });
+        } else {
+            await knex('etcmanager').update({
+                reason,
+                manager: user.name,
+            }).where({
+                number,
+                classNum: user.classNum
+            });
+        }
+        const serial = number.length == 1 ? `${user.classNum}0${number}` : `${user.classNum}${number}`;
+        return res.status(200).json({ socketData: {
+            classNum: user.classNum,
+            serial,
+            number,
+            fields: 'etc',
+            reason
+        } });
+    } else {
+        await knex('status').insert({
+            uid: etcUser.id,
+            reason,
+            fields: 'etc',
+            classNum: user.classNum
+        }).catch(err => {
+            console.log(err);
+            return res.status(500).json({ msg: '서버 에러' });
+        });
+        return res.status(200).json({ socketData: {
+            classNum: etcUser.classNum,
+            serial: etcUser.serial,
+            number,
+            fields: 'etc',
+            reason
+        } });
+    }
 })
 
 export default router;

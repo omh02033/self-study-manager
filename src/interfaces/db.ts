@@ -19,3 +19,9 @@ export interface DBSub {
     number: string;
     serial: string;
 }
+export interface DBEtcManager {
+    number: string;
+    reason: string;
+    manager: string;
+    classNum: string;
+}
