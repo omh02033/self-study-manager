@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import knex from '../config/db';
-import request from 'request-promise';
 import * as dimiApi from '../api/dimi';
 import { DBUsers, DBStatus } from '../interfaces';
 import jwt from 'jsonwebtoken';
@@ -11,7 +10,7 @@ router
 .post('/isLogin', async (req: Request, res: Response) => {
     const token = req.cookies['token'];
     if(token) {
-        const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
+        const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
         if(decoded) return res.status(400).json({ isLogin: false, delCookie: true });
         const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
         if(!user) return res.status(400).json({ isLogin: false, delCookie: true });
@@ -55,7 +54,7 @@ router
     const token = req.cookies['token'];
     if(!token) return res.status(400).json({ msg: '로그인 만료' });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
+    const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
     if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
 
     const { field, reason } = req.body;
@@ -93,7 +92,7 @@ router
     const token = req.cookies['token'];
     if(!token) return res.status(400).json({ msg: '로그인 만료' });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
+    const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
     if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
 
     const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
@@ -115,7 +114,7 @@ router
     const token = req.cookies['token'];
     if(!token) return res.status(400).json({ msg: '로그인 만료' });
 
-    const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
+    const decoded: any = await jwt.verify(token, process.env.JWT_KEY as string);
     if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
 
     const [user]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
