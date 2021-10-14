@@ -164,7 +164,7 @@ router
     const teachers = await dimiApi.getAllTeachers();
     const idx = teachers.findIndex((item) => {return item.grade === Number(classNum[0]) && item.class === Number(classNum[1])});
 
-    const status: Array<DBStatus> = await knex('status').where({ classNum }).whereNot('fields', 'wb');
+    const status: Array<DBStatus> = await knex('status').where({ classNum }).whereNot('fields', 'wb').whereNot('fields', 'etc');
     
     const asClubNum = status.length;
 
