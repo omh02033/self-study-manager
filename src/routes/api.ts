@@ -88,6 +88,7 @@ router
         serial: user.serial,
         number: user.number,
         fields: field,
+        name: user.name,
         reason
     } });
 })
@@ -136,7 +137,7 @@ router
 .post('/prevOuting', async (req: Request, res: Response) => {
     const { classNum } = req.body;
     const users: Array<DBSub> = await knex('status').join('auth', 'auth.id', 'status.uid')
-    .select('status.reason', 'status.fields', 'status.classNum', 'auth.number', 'auth.serial')
+    .select('status.reason', 'status.fields', 'status.classNum', 'auth.number', 'auth.serial', 'auth.name')
     .where({ 'status.classNum': classNum });
     const etcManage: Array<DBEtcManager> = await knex('etcmanager').where({ classNum });
 
@@ -159,9 +160,33 @@ router
         i.serial = i.number.length === 0 ? `${i.classNum}0${i.number}` : `${i.classNum}${i.number}`;
         etcMembers.push(i);
     }
+
+    const teachers = await dimiApi.getAllTeachers();
+    const idx = teachers.findIndex((item) => {return item.grade === Number(classNum[0]) && item.class === Number(classNum[1])});
+
+    const status: Array<DBStatus> = await knex('status').where({ classNum }).whereNot('fields', 'wb');
     
-    if(!users) return res.status(200).json({ users: [], etcNum, etcManage: etcMembers });
-    else return res.status(200).json({ users, totalNum, etcNum, etcManage: etcMembers });
+    const asClubNum = status.length;
+
+    if(!users) return res.status(200).json({
+        users: [],
+        etcNum,
+        asClubNum,
+        etcManage: etcMembers,
+        teacher: teachers[idx].name,
+        gradeNum: classNum[0],
+        classNum: classNum[1]
+    });
+    else return res.status(200).json({
+        users,
+        totalNum,
+        etcNum,
+        asClubNum,
+        etcManage: etcMembers,
+        teacher: teachers[idx].name,
+        gradeNum: classNum[0],
+        classNum: classNum[1]
+    });
 })
 
 .post('/etcManage', async (req: Request, res: Response) => {
@@ -252,6 +277,32 @@ router
         classNum: user.classNum,
         serial
     } });
+})
+
+.post('/mySpot', async (req: Request, res: Response) => {
+    const token = req.cookies['token'];
+    if(!token) return res.status(400).json({ result: false });
+
+    const decoded: any = jwt.verify(token, process.env.JWT_KEY as string);
+    if(!decoded) return res.status(400).json({ msg: '토큰 에러' });
+
+    const [user]: Array<DBSub> = await knex('status').join('auth', 'auth.id', 'status.uid')
+    .select('status.reason', 'status.fields', 'status.classNum', 'auth.number', 'auth.serial', 'auth.name')
+    .where({ 'auth.uid': decoded.uid });
+
+    if(!user) {
+        const [user1]: Array<DBUsers> = await knex('auth').where({ uid: decoded.uid });
+        return res.status(200).json({ name: user1.name, loc: "교실", serial: user1.serial });
+    }
+
+    let loc;
+
+    if(user.fields === 'wb') loc = "물, 화장실";
+    else if(user.fields === 'club') loc = `동아리 ${user.reason}`;
+    else if(user.fields === 'as') loc = `방과후 ${user.reason}`;
+    else if(user.fields === 'etc') loc = user.reason;
+
+    return res.status(200).json({ name: user.name, loc });
 })
 
 export default router;

@@ -49,6 +49,12 @@ export function getTeacher(uid:string): Promise<dimiTeacher | null> {
         url: `https://api.dimigo.hs.kr/v1/user-teachers/${uid}`
     });
 }
+export function getAllTeachers(): Promise<dimiTeacher[]> {
+    return dimiApi({
+        method: 'GET',
+        url: `https://api.dimigo.hs.kr/v1/user-teachers`
+    });
+}
 
 export function getGraduate(uid: number): Promise<dimiGraduate | null> {
     return dimiApi({
