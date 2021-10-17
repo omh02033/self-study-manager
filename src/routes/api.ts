@@ -243,6 +243,7 @@ router
         return res.status(200).json({ socketData: {
             classNum: etcUser.classNum,
             serial: etcUser.serial,
+            name: etcUser.name,
             number,
             fields: 'etc',
             reason
