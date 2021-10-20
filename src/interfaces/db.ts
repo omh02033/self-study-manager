@@ -28,3 +28,8 @@ export interface DBEtcManager {
     fields?: string;
     serial?: string;
 }
+export interface DBClassInfo {
+    grade: string;
+    class: string;
+    totalNum: number;
+}

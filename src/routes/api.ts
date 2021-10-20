@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import knex from '../config/db';
 import * as dimiApi from '../api/dimi';
-import { DBUsers, DBStatus, DBSub, DBEtcManager } from '../interfaces';
+import { DBUsers, DBStatus, DBSub, DBEtcManager, DBClassInfo } from '../interfaces';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
@@ -141,14 +141,10 @@ router
     .where({ 'status.classNum': classNum });
     const etcManage: Array<DBEtcManager> = await knex('etcmanager').where({ classNum });
 
-    const students = await dimiApi.getAllStudents();
+    const [students]: Array<DBClassInfo> = await knex('classInfo').where({grade: classNum[0], class: classNum[1]});
 
-    let totalNum = 0;
+    let totalNum = students.totalNum;
     let etcNum = 0;
-    for(let i of students) {
-        if(i.serial)
-            if(`${i.grade}${i.class}` == classNum) totalNum += 1;
-    }
 
     for(let i of users) {
         if(i.fields === 'etc') etcNum += 1;
