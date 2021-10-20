@@ -259,7 +259,7 @@ router
     const { number } = req.body;
 
     const status: Array<DBStatus[]> = await knex.raw("SELECT * FROM status WHERE uid=(SELECT id FROM auth WHERE `number`=? AND classNum=?)", [number, user.classNum]);
-    const serial = number.length == 1 ? `${user.classNum}0${number}` : `${user.classNum}${number}`
+    const serial = number.length == 1 ? `${user.classNum}0${number}` : `${user.classNum}${number}`;
     if(!status || status[0].length === 0) {
         const [etcManager]: Array<DBEtcManager> = await knex('etcmanager').where({ number, classNum: user.classNum });
         if(!etcManager) return res.status(400).json({ msg: '외출상태가 아닙니다.' });
