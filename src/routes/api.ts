@@ -35,7 +35,7 @@ router
                         await knex('auth').insert({
                             uid: student.username,
                             name: student.name,
-                            number: student.number,
+                            number: String(student.number).padStart(2, '0'),
                             serial: student.serial,
                             classNum: `${student.grade}${student.class}`
                         })
